@@ -39,14 +39,6 @@
 #error "No hardware header file set"
 #endif
 
-#ifdef USER_MC_CONF
-#include USER_MC_CONF
-#endif
-
-#ifdef USER_APP_CONF
-#include USER_APP_CONF
-#endif
-
 // This is how to provide a custom UI in VESC Tool. The UI can be created and tested in the
 // scripting page, then the source files can be exported. The defines below use the exported
 // files to provide the custom UI when VESC Tool connects.
@@ -86,8 +78,8 @@
 // #include "finn/app_finn_az_conf.h"
 
 #include "hw.h"
-#include "mcconf_default.h"
-#include "appconf_default.h"
+#include "user_mcconf.h"
+#include "user_appconf.h"
 
 /*
  * Enable blackmagic probe output on SWD port

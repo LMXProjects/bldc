@@ -1,0 +1,203 @@
+VERSION ""
+
+
+NS_ : 
+	NS_DESC_
+	CM_
+	BA_DEF_
+	BA_
+	VAL_
+	CAT_DEF_
+	CAT_
+	FILTER
+	BA_DEF_DEF_
+	EV_DATA_
+	ENVVAR_DATA_
+	SGTYPE_
+	SGTYPE_VAL_
+	BA_DEF_SGTYPE_
+	BA_SGTYPE_
+	SIG_TYPE_REF_
+	VAL_TABLE_
+	SIG_GROUP_
+	SIG_VALTYPE_
+	SIGTYPE_VALTYPE_
+	BO_TX_BU_
+	BA_DEF_REL_
+	BA_REL_
+	BA_DEF_DEF_REL_
+	BU_SG_REL_
+	BU_EV_REL_
+	BU_BO_REL_
+	SG_MUL_VAL_
+
+BS_:
+
+BU_: PCU_LMX MIC_id20 MIC_id10
+VAL_TABLE_ VCU_State 5 "Running" 4 "Charging" 3 "Standby" 2 "InitialisationDone" 1 "InitialisationOngoing" 0 "Failure" ;
+VAL_TABLE_ VCU_Relay_Status 3 "Unavailable" 2 "NotUsed" 1 "CLOSE" 0 "OPEN" ;
+VAL_TABLE_ ChargeIn_Status 3 "Unavailable" 2 "NotUsed" 1 "Plugged" 0 "Unplugged" ;
+VAL_TABLE_ PCU_Relay_Status 3 "Unavailable" 2 "NotUsed" 1 "CLOSE" 0 "OPEN" ;
+VAL_TABLE_ PCU_Thermal_Satus 3 "Not Used" 4 "Unavailable" 2 "OverHeat" 1 "Derating" 0 "Running" ;
+VAL_TABLE_ PCU_Direction 7 "Unavailable" 6 "Not Used" 5 "Not Used" 4 "Not Used" 3 "Not Used" 2 "Reverse" 1 "Drive" 0 "Neutral" ;
+VAL_TABLE_ PCU_Mode 255 "Unavailable" 4 "Regen" 3 "SpeedLim" 2 "PedalAssist" 1 "Throttle" 0 "Idle" ;
+VAL_TABLE_ PCU_State 255 "Unavailable" 5 "Running" 4 "Charging" 3 "Standby" 2 "Initialisation_Done" 1 "InitialisationOngoing" 0 "Failure" ;
+VAL_TABLE_ BMS_State 120 "REGEN" 110 "DISCHARGING" 100 "IDLE" 90 "OVERVOLTAGE" 70 "STANDBY" 40 "UNDERVOLTAGE" 30 "PROTECT" 20 "INIT" 10 "ERROR" ;
+VAL_TABLE_ Indicator_Odometer 3 "Unavailable" 2 "NotUsed" 1 "Total" 0 "Trip" ;
+VAL_TABLE_ Indicator_VehicleStatus 3 "Stop" 2 "Slow" 1 "Ready" 0 "OFF" ;
+VAL_TABLE_ Button_Status 3 "Unavailable" 2 "NotUsed" 1 "ON" 0 "OFF" ;
+VAL_TABLE_ Indicator_DrivingMode 3 "Unavailable" 2 "Reverse" 1 "Drive" 0 "Neutral" ;
+VAL_TABLE_ Indicator_Status 3 "Unavailable" 2 "NotUsed" 1 "ON" 0 "OFF" ;
+
+
+BO_ 2147489556 MIC_id20_Set_InputCurrent_Limits: 8 PCU_LMX
+ SG_ Set_Min_IDC_A : 7|32@0- (0.001,0) [-2147483.648|0] "A"  MIC_id20
+ SG_ Set_Max_IDC_A : 39|32@0- (0.001,0) [0|2147483.647] "A"  MIC_id20
+
+BO_ 2147489546 MIC_id10_Set_InputCurrent_Limits: 8 PCU_LMX
+ SG_ Set_Min_IDC_A : 7|32@0- (0.001,0) [-2147483.648|0] "A"  MIC_id20
+ SG_ Set_Max_IDC_A : 39|32@0- (0.001,0) [0|2147483.647] "A"  MIC_id20
+
+BO_ 2147489044 MIC_id20_Set_Current_Limits: 8 PCU_LMX
+ SG_ Set_Min_MotorCurrent_A : 7|32@0- (0.001,0) [-2147483.648|0] "A"  MIC_id20
+ SG_ Set_Max_MotorCurrent_A : 39|32@0- (0.001,0) [0|2147483.647] "A"  MIC_id20
+
+BO_ 2147489034 MIC_id10_Set_Current_Limits: 8 PCU_LMX
+ SG_ Set_Min_MotorCurrent_A : 7|32@0- (0.001,0) [-2147483.648|0] "A"  MIC_id20
+ SG_ Set_Max_MotorCurrent_A : 39|32@0- (0.001,0) [0|2147483.647] "A"  MIC_id20
+
+BO_ 2147484180 MIC_id20_Set_Current_Brake: 4 PCU_LMX
+ SG_ Set_Current_Brake_A : 7|32@0- (0.001,0) [-2147483.648|2147483.647] "A"  MIC_id20
+
+BO_ 2147484170 MIC_id10_Set_Current_Brake: 4 PCU_LMX
+ SG_ Set_Current_Brake_A : 7|32@0- (0.001,0) [-2147483.648|2147483.647] "A"  MIC_id20
+
+BO_ 2147483924 MIC_id20_Set_Current: 4 PCU_LMX
+ SG_ Set_Current_A : 7|32@0- (0.001,0) [-2147483.648|2147483.647] "A"  MIC_id20
+
+BO_ 2147483914 MIC_id10_Set_Current: 4 PCU_LMX
+ SG_ Set_Current_A : 7|32@0- (0.001,0) [-2147483.648|2147483.647] "A"  MIC_id20
+
+BO_ 2147483668 MIC_id20_Set_Duty: 4 PCU_LMX
+ SG_ Set_DutyCycle_perc : 7|16@0- (1E-05,0) [-1|1] "%/100"  MIC_id20
+
+BO_ 2147483658 MIC_id10_Set_Duty: 4 PCU_LMX
+ SG_ Set_DutyCycle_perc : 7|16@0- (1E-05,0) [-1|1] "%/100"  MIC_id20
+
+BO_ 2147485706 MIC_id10_Send_Command: 7 PCU_LMX
+ SG_ Value : 31|32@0- (0.001,0) [-32768|32767] ""  MIC_id20
+ SG_ mode : 23|8@0+ (1,0) [0|0] ""  MIC_id20
+
+BO_ 2147485716 MIC_id20_Send_Command: 7 PCU_LMX
+ SG_ mode : 23|8@0+ (1,0) [0|0] ""  MIC_id20,MIC_id10
+ SG_ Value : 31|32@0- (0.001,0) [-32768|32767] ""  MIC_id20,MIC_id10
+
+BO_ 2147485972 MIC_id20_Status1: 8 MIC_id20
+ SG_ Status_VDC_V : 55|16@0- (0.1,0) [0|0] "V" Vector__XXX
+ SG_ Status_MotorSpeed_rpm : 7|16@0- (2,0) [-65536|65534] "RPM"  PCU_LMX
+ SG_ Status_MotorCurrent_A : 23|16@0- (0.1,0) [-3276.8|3276.7] "A"  PCU_LMX
+ SG_ Status_DutyCycle_perc : 39|16@0- (0.1,0) [-100|100] "%"  PCU_LMX
+
+BO_ 2147485962 MIC_id10_Status1: 8 MIC_id10
+ SG_ Status_VDC_V : 55|16@0- (0.1,0) [0|0] "V" Vector__XXX
+ SG_ Status_MotorSpeed_rpm : 7|16@0- (2,0) [-65536|65534] "RPM"  PCU_LMX
+ SG_ Status_MotorCurrent_A : 23|16@0- (0.1,0) [-3276.8|3276.7] "A"  PCU_LMX
+ SG_ Status_DutyCycle_perc : 39|16@0- (0.1,0) [-100|100] "%"  PCU_LMX
+
+BO_ 2147487252 MIC_id20_Status2: 8 MIC_id20
+ SG_ Status_Iq_A : 39|32@0- (0.001,0) [-2147483.648|2147483.647] "A" Vector__XXX
+ SG_ Status_Id_A : 7|32@0- (0.001,0) [-2147483.648|2147483.647] "A" Vector__XXX
+
+BO_ 2147487242 MIC_id10_Status2: 8 MIC_id10
+ SG_ Status_Iq_A : 39|32@0- (0.001,0) [-2147483.648|2147483.647] "A" Vector__XXX
+ SG_ Status_Id_A : 7|32@0- (0.001,0) [-2147483.648|2147483.647] "A" Vector__XXX
+
+BO_ 2147487508 MIC_id20_Status3: 8 MIC_id20
+ SG_ Status_WattHoursCharged : 39|32@0- (1E-05,0) [-21474.83648|21474.83647] "Wh"  PCU_LMX
+ SG_ Status_WattHours : 7|32@0- (1E-05,0) [-21474.83648|21474.83647] "Wh"  PCU_LMX
+
+BO_ 2147487498 MIC_id10_Status3: 8 MIC_id10
+ SG_ Status_WattHours : 7|32@0- (0.0001,0) [-21474.83648|21474.83647] "Wh"  PCU_LMX
+ SG_ Status_WattHoursCharged : 39|32@0- (0.0001,0) [-21474.83648|21474.83647] "Wh"  PCU_LMX
+
+BO_ 2147487764 MIC_id20_Status4: 8 MIC_id20
+ SG_ Status_FaultCode : 55|16@0+ (1,0) [0|65535] "" Vector__XXX
+ SG_ Status_MosfetTemp_degC : 7|16@0- (0.1,0) [-3276.8|3276.7] "degC"  PCU_LMX
+ SG_ Status_MotorTemp_degC : 23|16@0- (0.1,0) [-3276.8|3276.7] "degC"  PCU_LMX
+ SG_ Status_IDC_A : 39|16@0- (0.1,0) [-3276.8|3276.7] "A"  PCU_LMX
+
+BO_ 2147487754 MIC_id10_Status4: 8 MIC_id10
+ SG_ Status_FaultCode : 55|16@0+ (1,0) [0|65535] "" Vector__XXX
+ SG_ Status_MosfetTemp_degC : 7|16@0- (0.1,0) [-3276.8|3276.7] "degC"  PCU_LMX
+ SG_ Status_MotorTemp_degC : 23|16@0- (0.1,0) [-3276.8|3276.7] "degC"  PCU_LMX
+ SG_ Status_IDC_A : 39|16@0- (0.1,0) [-3276.8|3276.7] "A"  PCU_LMX
+
+BO_ 2147490580 MIC_id20_Status5: 8 MIC_id20
+ SG_ Status_VDC_V : 39|16@0- (0.1,0) [0|0] "V"  PCU_LMX
+ SG_ Status_Tachometer : 7|32@0- (1,0) [0|0] "RPM"  PCU_LMX
+
+BO_ 2147490570 MIC_id10_Status5: 8 MIC_id10
+ SG_ Status_VDC_V : 39|16@0- (0.1,0) [0|0] "V"  PCU_LMX
+ SG_ Status_Tachometer : 7|32@0- (1,0) [0|0] "RPM"  PCU_LMX
+
+BO_ 2147498516 MIC_id20_Status6: 8 MIC_id20
+ SG_ PPM : 55|16@0+ (1000,0) [0|0] "%"  PCU_LMX
+ SG_ ADC3 : 39|16@0+ (0.001,0) [0|0] "V"  PCU_LMX
+ SG_ ADC2 : 23|1@0+ (0.001,0) [0|0] "V"  PCU_LMX
+ SG_ ADC1 : 7|16@0+ (0.001,0) [0|0] "V"  PCU_LMX
+
+BO_ 2147498506 MIC_id10_Status6: 8 MIC_id10
+ SG_ ADC1 : 7|16@0+ (0.001,0) [0|0] "V"  PCU_LMX
+ SG_ ADC2 : 23|16@0+ (0.001,0) [0|0] "V"  PCU_LMX
+ SG_ ADC3 : 39|16@0+ (0.001,0) [0|0] "V"  PCU_LMX
+ SG_ PPM : 55|16@0+ (1000,0) [0|0] "%"  PCU_LMX
+
+
+
+CM_ BU_ PCU_LMX "
+";
+CM_ BO_ 2147489556 "Mode : 5 = Duty Cycle, 6 = Amps, 7 = Regen. id = 0x0800 + id_MIC. Ici id_MIC = 48 = 0x30";
+CM_ BO_ 2147489546 "Mode : 5 = Duty Cycle, 6 = Amps, 7 = Regen. id = 0x0800 + id_MIC. Ici id_MIC = 48 = 0x30";
+CM_ BO_ 2147489044 "Mode : 5 = Duty Cycle, 6 = Amps, 7 = Regen. id = 0x0800 + id_MIC. Ici id_MIC = 48 = 0x30";
+CM_ BO_ 2147489034 "Mode : 5 = Duty Cycle, 6 = Amps, 7 = Regen. id = 0x0800 + id_MIC. Ici id_MIC = 48 = 0x30";
+CM_ BO_ 2147484180 "Mode : 5 = Duty Cycle, 6 = Amps, 7 = Regen. id = 0x0800 + id_MIC. Ici id_MIC = 48 = 0x30";
+CM_ BO_ 2147484170 "Mode : 5 = Duty Cycle, 6 = Amps, 7 = Regen. id = 0x0800 + id_MIC. Ici id_MIC = 48 = 0x30";
+CM_ BO_ 2147483924 "Mode : 5 = Duty Cycle, 6 = Amps, 7 = Regen. id = 0x0800 + id_MIC. Ici id_MIC = 48 = 0x30";
+CM_ BO_ 2147483914 "Mode : 5 = Duty Cycle, 6 = Amps, 7 = Regen. id = 0x0800 + id_MIC. Ici id_MIC = 48 = 0x30";
+CM_ BO_ 2147483668 "Mode : 5 = Duty Cycle, 6 = Amps, 7 = Regen. id = 0x0800 + id_MIC. Ici id_MIC = 48 = 0x30";
+CM_ BO_ 2147483658 "Mode : 5 = Duty Cycle, 6 = Amps, 7 = Regen. id = 0x0800 + id_MIC. Ici id_MIC = 48 = 0x30";
+CM_ BO_ 2147485706 "Mode : 5 = Duty Cycle, 6 = Amps, 7 = Regen. id = 0x0800 + id_MIC. Ici id_MIC = 48 = 0x30";
+CM_ BO_ 2147485716 "Mode : 5 = Duty Cycle, 6 = Amps, 7 = Regen. id = 0x0800 + id_MIC. Ici id_MIC = 28 = 0x1c";
+CM_ BO_ 2147485972 "20 ms      id = 0x0900 + id_MIC. Ici id_MIC = 48 = 0x30";
+CM_ SG_ 2147485972 Status_VDC_V "DC voltage in V";
+CM_ SG_ 2147485972 Status_MotorSpeed_rpm "Motor Electrical speed. Factor for npp = 5 in order to extract mechanical speed";
+CM_ SG_ 2147485972 Status_MotorCurrent_A "Motor phase current in A";
+CM_ SG_ 2147485962 Status_VDC_V "DC voltage in V";
+CM_ SG_ 2147485962 Status_MotorSpeed_rpm "Motor Electrical speed. Factor for npp = 5 in order to extract mechanical speed";
+CM_ SG_ 2147485962 Status_MotorCurrent_A "Motor phase current in A";
+CM_ BO_ 2147487252 "20 ms      id = 0x0E00 + id_MIC. Ici id_MIC = 48 = 0x30";
+CM_ SG_ 2147487252 Status_Iq_A "Motor phase current in A";
+CM_ SG_ 2147487252 Status_Id_A "Motor phase current in A";
+CM_ SG_ 2147487242 Status_Iq_A "Motor phase current in A";
+CM_ SG_ 2147487242 Status_Id_A "Motor phase current in A";
+CM_ BO_ 2147487508 "20 ms      id = 0x0F00 + id_MIC. Ici id_MIC = 42 = 0x30";
+CM_ BO_ 2147487498 "
+";
+CM_ BO_ 2147487764 "20 ms      id = 0x1000 + id_MIC. Ici id_MIC = 48 = 0x30";
+CM_ SG_ 2147487764 Status_IDC_A "DC current in A";
+CM_ BO_ 2147487754 "
+";
+CM_ SG_ 2147487754 Status_FaultCode "Motor phase current in A";
+CM_ SG_ 2147487754 Status_IDC_A "DC current in A";
+CM_ BO_ 2147490580 "20 ms      id = 0x1B00 + id_MIC. Ici id_MIC = 48 = 0x30";
+CM_ SG_ 2147490580 Status_VDC_V "DC voltage in V";
+CM_ SG_ 2147490570 Status_VDC_V "DC voltage in V";
+CM_ BO_ 2147498516 "20 ms      id = 0x3A00 + id_MIC. Ici id_MIC = 28 = 0x30";
+BA_DEF_  "BusType" STRING ;
+BA_DEF_ SG_  "GenSigStartValue" FLOAT -3.4E+38 3.4E+38;
+BA_DEF_DEF_  "BusType" "CAN";
+BA_DEF_DEF_  "GenSigStartValue" 0;
+BA_ "BusType" "CAN";
+VAL_ 2147487764 Status_FaultCode 29 "LV_OUTPUT_FAULT" 28 "ENCODER_FAULT" 27 "PHASE_FILTER" 26 "ENCODER_MAGNET_TOO_STRONG" 25 "ENCODER_NO_MAGNET" 24 "FLASH_CORRUPTION_MC_CFG" 23 "FLASH_CORRUPTION_APP_CFG" 22 "RESOLVER_LOS" 21 "RESOLVER_DOS" 20 "RESOLVER_LOT" 19 "BRK" 18 "UNBALANCED_CURRENTS" 17 "HIGH_OFFSET_CURRENT_SENSOR_3" 16 "HIGH_OFFSET_CURRENT_SENSOR_2" 15 "HIGH_OFFSET_CURRENT_SENSOR_1" 14 "FLASH_CORRUPTION" 13 "ENCODER_SINCOS_MAX_AMPLITUDE" 12 "ENCODER_SINCOS_MIN_AMPLITUDE" 11 "ENCODER_SPI" 10 "BOOTING_FROM_WATCHDOG_RESET" 9 "MCU_UNDER_VOLTAGE" 8 "GATE_DRIVER_UNDER_VOLTAGE" 7 "GATE_DRIVER_OVER_VOLTAGE" 6 "OVER_TEMP_MOTOR" 5 "OVER_TEMP_FET" 4 "ABS_OVER_CURRENT" 3 "DRV" 2 "UNDER_VOLTAGE" 1 "OVER_VOLTAGE" 0 "NONE" ;
+VAL_ 2147487754 Status_FaultCode 29 "LV_OUTPUT_FAULT" 28 "ENCODER_FAULT" 27 "PHASE_FILTER" 26 "ENCODER_MAGNET_TOO_STRONG" 25 "ENCODER_NO_MAGNET" 24 "FLASH_CORRUPTION_MC_CFG" 23 "FLASH_CORRUPTION_APP_CFG" 22 "RESOLVER_LOS" 21 "RESOLVER_DOS" 20 "RESOLVER_LOT" 19 "BRK" 18 "UNBALANCED_CURRENTS" 17 "HIGH_OFFSET_CURRENT_SENSOR_3" 16 "HIGH_OFFSET_CURRENT_SENSOR_2" 15 "HIGH_OFFSET_CURRENT_SENSOR_1" 14 "FLASH_CORRUPTION" 13 "ENCODER_SINCOS_MAX_AMPLITUDE" 12 "ENCODER_SINCOS_MIN_AMPLITUDE" 11 "ENCODER_SPI" 10 "BOOTING_FROM_WATCHDOG_RESET" 9 "MCU_UNDER_VOLTAGE" 8 "GATE_DRIVER_UNDER_VOLTAGE" 7 "GATE_DRIVER_OVER_VOLTAGE" 6 "OVER_TEMP_MOTOR" 5 "OVER_TEMP_FET" 4 "ABS_OVER_CURRENT" 3 "DRV" 2 "UNDER_VOLTAGE" 1 "OVER_VOLTAGE" 0 "NONE" ;
+

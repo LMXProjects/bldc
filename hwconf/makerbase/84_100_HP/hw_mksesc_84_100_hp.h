@@ -112,7 +112,7 @@
 
 // Component parameters (can be overridden)
 #ifndef V_REG
-#define V_REG 3.40
+#define V_REG 3.30
 #endif
 
 // The voltage dividing acquisition circuit on the Makerbase VESC motherboard is 560K and 22K resistors.

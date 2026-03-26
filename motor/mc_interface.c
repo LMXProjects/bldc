@@ -127,6 +127,8 @@ static volatile int m_sample_trigger;
 static volatile float m_last_adc_duration_sample;
 static volatile bool m_sample_is_second_motor;
 static volatile gnss_data m_gnss = {0};
+static volatile bool aux_can_control = false;
+static volatile systime_t aux_can_timeout = 0;
 
 typedef struct {
 	bool is_second_motor;
@@ -2556,73 +2558,79 @@ static void run_timer_tasks(volatile motor_if_state_t *motor) {
 	update_override_limits(motor, &motor->m_conf);
 
 	// Update auxiliary output
-	switch (motor->m_conf.m_out_aux_mode) {
-	case OUT_AUX_MODE_UNUSED:
-		break;
+	if (aux_can_control && chVTGetSystemTimeX() > aux_can_timeout) {
+		aux_can_control = false;
+	}
+	
+	if (!aux_can_control) {
+		switch (motor->m_conf.m_out_aux_mode) {
+		case OUT_AUX_MODE_UNUSED:
+			break;
 
-	case OUT_AUX_MODE_OFF:
-		AUX_OFF();
-		break;
-
-	case OUT_AUX_MODE_ON_AFTER_2S:
-		if (chVTGetSystemTimeX() >= MS2ST(2000)) {
-			AUX_ON();
-		}
-		break;
-
-	case OUT_AUX_MODE_ON_AFTER_5S:
-		if (chVTGetSystemTimeX() >= MS2ST(5000)) {
-			AUX_ON();
-		}
-		break;
-
-	case OUT_AUX_MODE_ON_AFTER_10S:
-		if (chVTGetSystemTimeX() >= MS2ST(10000)) {
-			AUX_ON();
-		}
-		break;
-
-	case OUT_AUX_MODE_ON_WHEN_RUNNING:
-		if (mc_interface_get_state() == MC_STATE_RUNNING) {
-			AUX_ON();
-		} else {
+		case OUT_AUX_MODE_OFF:
 			AUX_OFF();
+			break;
+
+		case OUT_AUX_MODE_ON_AFTER_2S:
+			if (chVTGetSystemTimeX() >= MS2ST(2000)) {
+				AUX_ON();
+			}
+			break;
+
+		case OUT_AUX_MODE_ON_AFTER_5S:
+			if (chVTGetSystemTimeX() >= MS2ST(5000)) {
+				AUX_ON();
+			}
+			break;
+
+		case OUT_AUX_MODE_ON_AFTER_10S:
+			if (chVTGetSystemTimeX() >= MS2ST(10000)) {
+				AUX_ON();
+			}
+			break;
+
+		case OUT_AUX_MODE_ON_WHEN_RUNNING:
+			if (mc_interface_get_state() == MC_STATE_RUNNING) {
+				AUX_ON();
+			} else {
+				AUX_OFF();
+			}
+			break;
+
+		case OUT_AUX_MODE_ON_WHEN_NOT_RUNNING:
+			if (mc_interface_get_state() == MC_STATE_RUNNING) {
+				AUX_OFF();
+			} else {
+				AUX_ON();
+			}
+			break;
+
+		case OUT_AUX_MODE_MOTOR_50:
+			if (mc_interface_temp_motor_filtered() > 50.0) {AUX_ON();} else {AUX_OFF();}
+			break;
+
+		case OUT_AUX_MODE_MOSFET_50:
+			if (mc_interface_temp_fet_filtered() > 50.0) {AUX_ON();} else {AUX_OFF();}
+			break;
+
+		case OUT_AUX_MODE_MOTOR_70:
+			if (mc_interface_temp_motor_filtered() > 70.0) {AUX_ON();} else {AUX_OFF();}
+			break;
+
+		case OUT_AUX_MODE_MOSFET_70:
+			if (mc_interface_temp_fet_filtered() > 70.0) {AUX_ON();} else {AUX_OFF();}
+			break;
+
+		case OUT_AUX_MODE_MOTOR_MOSFET_50:
+			if (mc_interface_temp_motor_filtered() > 50.0 ||
+					mc_interface_temp_fet_filtered() > 50.0) {AUX_ON();} else {AUX_OFF();}
+			break;
+
+		case OUT_AUX_MODE_MOTOR_MOSFET_70:
+			if (mc_interface_temp_motor_filtered() > 70.0 ||
+					mc_interface_temp_fet_filtered() > 70.0) {AUX_ON();} else {AUX_OFF();}
+			break;
 		}
-		break;
-
-	case OUT_AUX_MODE_ON_WHEN_NOT_RUNNING:
-		if (mc_interface_get_state() == MC_STATE_RUNNING) {
-			AUX_OFF();
-		} else {
-			AUX_ON();
-		}
-		break;
-
-	case OUT_AUX_MODE_MOTOR_50:
-		if (mc_interface_temp_motor_filtered() > 50.0) {AUX_ON();} else {AUX_OFF();}
-		break;
-
-	case OUT_AUX_MODE_MOSFET_50:
-		if (mc_interface_temp_fet_filtered() > 50.0) {AUX_ON();} else {AUX_OFF();}
-		break;
-
-	case OUT_AUX_MODE_MOTOR_70:
-		if (mc_interface_temp_motor_filtered() > 70.0) {AUX_ON();} else {AUX_OFF();}
-		break;
-
-	case OUT_AUX_MODE_MOSFET_70:
-		if (mc_interface_temp_fet_filtered() > 70.0) {AUX_ON();} else {AUX_OFF();}
-		break;
-
-	case OUT_AUX_MODE_MOTOR_MOSFET_50:
-		if (mc_interface_temp_motor_filtered() > 50.0 ||
-				mc_interface_temp_fet_filtered() > 50.0) {AUX_ON();} else {AUX_OFF();}
-		break;
-
-	case OUT_AUX_MODE_MOTOR_MOSFET_70:
-		if (mc_interface_temp_motor_filtered() > 70.0 ||
-				mc_interface_temp_fet_filtered() > 70.0) {AUX_ON();} else {AUX_OFF();}
-		break;
 	}
 
 	encoder_check_faults(&motor->m_conf, !is_motor_1);
@@ -3022,4 +3030,19 @@ unsigned mc_interface_calc_crc(mc_configuration* conf_in, bool is_motor_2) {
 	unsigned crc_new = crc16((uint8_t*)conf, sizeof(mc_configuration));
 	conf->crc = crc_old;
 	return crc_new;
+}
+
+/**
+ * Set AUX CAN control.
+ *
+ * @param enable
+ * True to enable CAN control of AUX, false to disable.
+ */
+void mc_interface_set_aux_can_control(bool enable) {
+	if (enable) {
+		aux_can_control = true;
+		aux_can_timeout = chVTGetSystemTimeX() + MS2ST(1000); // 1 second timeout
+	} else {
+		aux_can_control = false;
+	}
 }

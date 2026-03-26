@@ -137,6 +137,9 @@ void mc_interface_mc_timer_isr(bool is_second_motor);
 // Interrupt handlers
 void mc_interface_adc_inj_int_handler(void);
 
+// AUX control
+void mc_interface_set_aux_can_control(bool enable);
+
 // External variables
 extern volatile uint16_t ADC_Value[];
 extern volatile float ADC_curr_norm_value[];

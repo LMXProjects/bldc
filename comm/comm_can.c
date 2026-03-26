@@ -92,6 +92,7 @@ static thread_t *ping_tp = 0;
 static volatile HW_TYPE ping_hw_last = HW_TYPE_VESC;
 static volatile int ping_hw_last_id = -1;
 static volatile bool init_done = false;
+static volatile bool aux_state = false;
 #endif
 
 // Variables
@@ -553,6 +554,32 @@ void comm_can_set_current_brake_rel(uint8_t controller_id, float current_rel) {
 	buffer_append_float32(buffer, current_rel, 1e5, &send_index);
 	comm_can_transmit_eid_replace(controller_id |
 			((uint32_t)CAN_PACKET_SET_CURRENT_BRAKE_REL << 8), buffer, send_index, true, 0);
+}
+
+/**
+ * Set auxiliary output.
+ *
+ * @param controller_id
+ * The ID of the VESC to set the auxiliary output on.
+ *
+ * @param on
+ * True for AUX_ON, false for AUX_OFF.
+ */
+void comm_can_set_aux(uint8_t controller_id, bool on) {
+	uint8_t buffer[1];
+	buffer[0] = on ? 1 : 0;
+	comm_can_transmit_eid_replace(controller_id |
+			((uint32_t)CAN_PACKET_SET_AUX << 8), buffer, 1, true, 0);
+}
+
+/**
+ * Get the current auxiliary output state.
+ *
+ * @return
+ * True if AUX is on, false otherwise.
+ */
+bool comm_can_get_aux_state(void) {
+	return aux_state;
 }
 
 /**
@@ -1195,7 +1222,10 @@ void comm_can_send_status4(uint8_t id, bool replace) {
 	buffer_append_int16(buffer, (int16_t)(mc_interface_temp_fet_filtered() * 1e1), &send_index);
 	buffer_append_int16(buffer, (int16_t)(mc_interface_temp_motor_filtered() * 1e1), &send_index);
 	buffer_append_int16(buffer, (int16_t)(mc_interface_get_tot_current_in_filtered() * 1e1), &send_index);
-	buffer_append_uint16(buffer, (uint16_t)(mc_interface_get_fault()), &send_index);
+	buffer_append_uint16(buffer, (uint16_t)(comm_can_get_aux_state()), &send_index);
+
+	
+	//buffer_append_uint16(buffer, (uint16_t)(mc_interface_get_fault()), &send_index);
 	//buffer_append_int16(buffer, (int16_t)(mc_interface_get_pid_pos_now() * 50.0), &send_index);
 	comm_can_transmit_eid_replace(id | ((uint32_t)CAN_PACKET_STATUS_4 << 8),
 			buffer, send_index, replace, 0);
@@ -1952,6 +1982,18 @@ static void decode_msg(uint32_t eid, uint8_t *data8, int len, bool is_replaced) 
 			comm_can_transmit_eid_replace(app_get_configuration()->controller_id |
 					((uint32_t)CAN_PACKET_POLL_ROTOR_POS << 8), (uint8_t*)buffer, 4, true, 0);
 		} break;
+
+		case CAN_PACKET_SET_AUX:
+			if (len >= 1) {
+				aux_state = data8[0] != 0;
+				mc_interface_set_aux_can_control(true);
+				if (data8[0] == 0) {
+					AUX_OFF();
+				} else {
+					AUX_ON();
+				}
+			}
+			break;
 
 		default:
 			break;

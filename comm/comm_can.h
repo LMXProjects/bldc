@@ -45,8 +45,6 @@ void comm_can_set_pos(uint8_t controller_id, float pos);
 void comm_can_set_current_rel(uint8_t controller_id, float current_rel);
 void comm_can_set_current_rel_off_delay(uint8_t controller_id, float current_rel, float off_delay);
 void comm_can_set_current_brake_rel(uint8_t controller_id, float current_rel);
-void comm_can_set_aux(uint8_t controller_id, bool on);
-bool comm_can_get_aux_state(void);
 bool comm_can_ping(uint8_t controller_id, HW_TYPE *hw_type);
 void comm_can_detect_apply_all_foc(uint8_t controller_id, bool activate_status_msgs, float max_power_loss);
 void comm_can_conf_current_limits(uint8_t controller_id,

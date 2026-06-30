@@ -45,17 +45,17 @@
 
 // Input Current Limit Map Start
 #ifndef MCCONF_L_IN_CURRENT_MAP_START
-#define MCCONF_L_IN_CURRENT_MAP_START 0.85
+#define MCCONF_L_IN_CURRENT_MAP_START 0.45
 #endif
 
 // Input Current Map Filter
 #ifndef MCCONF_L_IN_CURRENT_MAP_FILTER
-#define MCCONF_L_IN_CURRENT_MAP_FILTER 0.035
+#define MCCONF_L_IN_CURRENT_MAP_FILTER 0.4
 #endif
 
 // Absolute Maximum Current
 #ifndef MCCONF_L_MAX_ABS_CURRENT
-#define MCCONF_L_MAX_ABS_CURRENT 150
+#define MCCONF_L_MAX_ABS_CURRENT 180
 #endif
 
 // Max ERPM Reverse
@@ -175,7 +175,7 @@
 
 // Duty Cycle Current Limit Start
 #ifndef MCCONF_L_DUTY_START
-#define MCCONF_L_DUTY_START 0.9
+#define MCCONF_L_DUTY_START 1
 #endif
 
 // Minimum ERPM
@@ -500,7 +500,7 @@
 
 // Current Filter Constant
 #ifndef MCCONF_FOC_CURRENT_FILTER_CONST
-#define MCCONF_FOC_CURRENT_FILTER_CONST 0.1
+#define MCCONF_FOC_CURRENT_FILTER_CONST 0.4
 #endif
 
 // Current Controller Decoupling
@@ -635,12 +635,12 @@
 
 // Field Weakening Current Max
 #ifndef MCCONF_FOC_FW_CURRENT_MAX
-#define MCCONF_FOC_FW_CURRENT_MAX 80
+#define MCCONF_FOC_FW_CURRENT_MAX 130
 #endif
 
 // Field Weakening Duty Start
 #ifndef MCCONF_FOC_FW_DUTY_START
-#define MCCONF_FOC_FW_DUTY_START 0.65
+#define MCCONF_FOC_FW_DUTY_START 0.8
 #endif
 
 // Field Weakening Ramp Time
@@ -890,7 +890,7 @@
 
 // Battery Filter Constant
 #ifndef MCCONF_M_BATT_FILTER_CONST
-#define MCCONF_M_BATT_FILTER_CONST 45
+#define MCCONF_M_BATT_FILTER_CONST 15
 #endif
 
 // Motor Poles

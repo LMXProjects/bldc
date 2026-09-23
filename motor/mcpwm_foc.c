@@ -46,6 +46,10 @@
 static volatile bool m_dccal_done = false;
 static volatile float m_last_adc_isr_duration;
 static volatile bool m_init_done = false;
+static volatile bool m_emergency_brake_m1 = false;
+static volatile bool m_emergency_brake_m2 = false;
+static volatile bool m_emergency_fault_sent_m1 = false;
+static volatile bool m_emergency_fault_sent_m2 = false;
 static volatile motor_all_state_t m_motor_1;
 #ifdef HW_HAS_DUAL_MOTORS
 static volatile motor_all_state_t m_motor_2;
@@ -355,6 +359,10 @@ void mcpwm_foc_init(mc_configuration *conf_m1, mc_configuration *conf_m2) {
 #endif
 
 	m_init_done = false;
+	m_emergency_brake_m1 = false;
+	m_emergency_brake_m2 = false;
+	m_emergency_fault_sent_m1 = false;
+	m_emergency_fault_sent_m2 = false;
 
 	memset((void*)&m_motor_1, 0, sizeof(motor_all_state_t));
 	m_isr_motor = 0;
@@ -3659,6 +3667,10 @@ void mcpwm_foc_adc_int_handler(void *p, uint32_t flags) {
 	palSetPad(AD2S1205_SAMPLE_GPIO, AD2S1205_SAMPLE_PIN);
 #endif
 
+	// Use the instantaneous ADC VBUS sample for the emergency threshold.
+	const float vdc = GET_INPUT_VOLTAGE();
+	mcpwm_foc_update_emergency_brake(is_second_motor, vdc);
+
 #ifdef HW_HAS_DUAL_MOTORS
 	mc_interface_mc_timer_isr(is_second_motor);
 #else
@@ -3667,6 +3679,31 @@ void mcpwm_foc_adc_int_handler(void *p, uint32_t flags) {
 
 	m_isr_motor = 0;
 	m_last_adc_isr_duration = timer_seconds_elapsed_since(t_start);
+}
+
+bool mcpwm_foc_update_emergency_brake(bool is_second_motor, float vdc) {
+	volatile bool *emergency_brake = is_second_motor ? &m_emergency_brake_m2 : &m_emergency_brake_m1;
+	volatile bool *fault_sent = is_second_motor ? &m_emergency_fault_sent_m2 : &m_emergency_fault_sent_m1;
+	motor_all_state_t *motor = (motor_all_state_t*)M_MOTOR(is_second_motor);
+
+	if (vdc >= MCPWM_FOC_EMERGENCY_OVERVOLTAGE) {
+		*emergency_brake = true;
+	}
+
+	if (*emergency_brake) {
+		full_brake_hw(motor);
+
+		if (!*fault_sent) {
+			*fault_sent = true;
+			mc_interface_fault_stop(FAULT_CODE_EMERGENCY_OVERVOLTAGE, is_second_motor, true);
+		}
+	}
+
+	return *emergency_brake;
+}
+
+bool mcpwm_foc_emergency_brake_active(bool is_second_motor) {
+	return is_second_motor ? m_emergency_brake_m2 : m_emergency_brake_m1;
 }
 
 // Private functions

@@ -473,6 +473,7 @@ const char* mc_interface_fault_to_string(mc_fault_code fault) {
 	case FAULT_CODE_NONE: return "FAULT_CODE_NONE"; break;
 	case FAULT_CODE_OVER_VOLTAGE: return "FAULT_CODE_OVER_VOLTAGE"; break;
 	case FAULT_CODE_UNDER_VOLTAGE: return "FAULT_CODE_UNDER_VOLTAGE"; break;
+	case FAULT_CODE_EMERGENCY_OVERVOLTAGE: return "FAULT_CODE_EMERGENCY_OVERVOLTAGE"; break;
 	case FAULT_CODE_DRV: return "FAULT_CODE_DRV"; break;
 	case FAULT_CODE_ABS_OVER_CURRENT: return "FAULT_CODE_ABS_OVER_CURRENT"; break;
 	case FAULT_CODE_OVER_TEMP_FET: return "FAULT_CODE_OVER_TEMP_FET"; break;
@@ -1868,7 +1869,7 @@ void mc_interface_mc_timer_isr(bool is_second_motor) {
 		voltage_diff_now = input_voltage - conf_now->l_max_vin;
 	}
 
-	if (voltage_diff_now > 1.0e-3) {
+	if (!mcpwm_foc_emergency_brake_active(is_second_motor) && voltage_diff_now > 1.0e-3) {
 		wrong_voltage_integrator += voltage_diff_now;
 
 		const float max_voltage = (conf_now->l_max_vin * 0.05);
@@ -2538,7 +2539,8 @@ static void run_timer_tasks(volatile motor_if_state_t *motor) {
 	if (motor->m_ignore_iterations > 0) {
 		motor->m_ignore_iterations--;
 	} else {
-		if (!(is_motor_1 ? IS_DRV_FAULT() : IS_DRV_FAULT_2())) {
+		if (!(is_motor_1 ? IS_DRV_FAULT() : IS_DRV_FAULT_2())
+				&& !mcpwm_foc_emergency_brake_active(!is_motor_1)) {
 			motor->m_fault_now = FAULT_CODE_NONE;
 		}
 	}
@@ -2979,7 +2981,9 @@ static THD_FUNCTION(fault_stop_thread, arg) {
 			break;
 
 		case MOTOR_TYPE_FOC:
-			mcpwm_foc_stop_pwm(fault_data_copy.is_second_motor);
+			if (fault_data_copy.fault_code != FAULT_CODE_EMERGENCY_OVERVOLTAGE) {
+				mcpwm_foc_stop_pwm(fault_data_copy.is_second_motor);
+			}
 			break;
 
 		default:

@@ -146,8 +146,11 @@ mc_state mcpwm_foc_get_state_motor(bool is_second_motor);
 // Interrupt handlers
 void mcpwm_foc_tim_sample_int_handler(void);
 void mcpwm_foc_adc_int_handler(void *p, uint32_t flags);
+bool mcpwm_foc_update_emergency_brake(bool is_second_motor, float input_voltage);
+bool mcpwm_foc_emergency_brake_active(bool is_second_motor);
 
 // Defines
 #define MCPWM_FOC_CURRENT_SAMP_OFFSET				(2) // Offset from timer top for ADC samples
+#define MCPWM_FOC_EMERGENCY_OVERVOLTAGE			(59.0)
 
 #endif /* MCPWM_FOC_H_ */

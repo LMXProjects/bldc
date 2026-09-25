@@ -2821,13 +2821,6 @@ void mcpwm_foc_adc_int_handler(void *p, uint32_t flags) {
 	(void)p;
 	(void)flags;
 
-	static int skip = 0;
-	if (++skip == FOC_CONTROL_LOOP_FREQ_DIVIDER) {
-		skip = 0;
-	} else {
-		return;
-	}
-
 	uint32_t t_start = timer_time_now();
 
 	bool is_v7 = !(TIM1->CR1 & TIM_CR1_DIR);
@@ -2852,13 +2845,19 @@ void mcpwm_foc_adc_int_handler(void *p, uint32_t flags) {
 #endif
 #endif
 
-	// Check the instantaneous ADC VBUS sample before running the FOC calculations.
-	// Keep running the estimator while the emergency brake is active so speed
-	// telemetry continues to be updated.
-	mcpwm_foc_update_emergency_brake(is_second_motor, GET_INPUT_VOLTAGE());
-
 	mc_configuration *conf_now = motor_now->m_conf;
 	mc_configuration *conf_other = motor_other->m_conf;
+
+	// Check VBUS before any V0/V7 or loop-divider return.
+	const float vdc = GET_INPUT_VOLTAGE();
+	mcpwm_foc_update_emergency_brake(is_second_motor, vdc);
+
+	static int skip = 0;
+	if (++skip == FOC_CONTROL_LOOP_FREQ_DIVIDER) {
+		skip = 0;
+	} else {
+		return;
+	}
 
 	bool skip_interpolation = motor_other->m_cc_was_hfi;
 
@@ -2951,6 +2950,9 @@ void mcpwm_foc_adc_int_handler(void *p, uint32_t flags) {
 		TIMER_UPDATE_DUTY_M1(duty1, duty2, duty3);
 #endif
 	}
+
+	// Re-assert the brake after any interpolation duty update.
+	mcpwm_foc_update_emergency_brake(is_second_motor, vdc);
 
 	if (do_return) {
 		return;

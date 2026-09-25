@@ -151,6 +151,6 @@ bool mcpwm_foc_emergency_brake_active(bool is_second_motor);
 
 // Defines
 #define MCPWM_FOC_CURRENT_SAMP_OFFSET				(2) // Offset from timer top for ADC samples
-#define MCPWM_FOC_EMERGENCY_OVERVOLTAGE			(59.0)
+#define MCPWM_FOC_EMERGENCY_OVERVOLTAGE			(30.0)
 
 #endif /* MCPWM_FOC_H_ */

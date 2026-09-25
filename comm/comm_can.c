@@ -1164,7 +1164,9 @@ void comm_can_send_status1(uint8_t id, bool replace) {
 	buffer_append_int16(buffer, (int16_t)(mc_interface_get_rpm() / 10), &send_index);
 	buffer_append_int16(buffer, (int16_t)(mc_interface_get_tot_current_filtered() * 1e1), &send_index);
 	buffer_append_int16(buffer, (int16_t)(mc_interface_get_duty_cycle_now() * 1e3), &send_index);
-	buffer_append_int16(buffer, (int16_t)(mc_interface_get_input_voltage_filtered() * 1e1), &send_index);
+	//buffer_append_int16(buffer, (int16_t)(mc_interface_get_input_voltage_filtered() * 1e1), &send_index);
+	buffer_append_int16(buffer, (int16_t)(GET_INPUT_VOLTAGE() * 1e1), &send_index);
+	
 	comm_can_transmit_eid_replace(id | ((uint32_t)CAN_PACKET_STATUS << 8),
 			buffer, send_index, replace, 0);
 }

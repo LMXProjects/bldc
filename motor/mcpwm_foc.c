@@ -2852,6 +2852,13 @@ void mcpwm_foc_adc_int_handler(void *p, uint32_t flags) {
 #endif
 #endif
 
+	// Check the instantaneous ADC VBUS sample before running the FOC calculations.
+	if (mcpwm_foc_update_emergency_brake(is_second_motor, GET_INPUT_VOLTAGE())) {
+		m_isr_motor = 0;
+		m_last_adc_isr_duration = timer_seconds_elapsed_since(t_start);
+		return;
+	}
+
 	mc_configuration *conf_now = motor_now->m_conf;
 	mc_configuration *conf_other = motor_other->m_conf;
 
@@ -3666,10 +3673,6 @@ void mcpwm_foc_adc_int_handler(void *p, uint32_t flags) {
 	// Release sample in the AD2S1205 resolver IC.
 	palSetPad(AD2S1205_SAMPLE_GPIO, AD2S1205_SAMPLE_PIN);
 #endif
-
-	// Use the instantaneous ADC VBUS sample for the emergency threshold.
-	const float vdc = GET_INPUT_VOLTAGE();
-	mcpwm_foc_update_emergency_brake(is_second_motor, vdc);
 
 #ifdef HW_HAS_DUAL_MOTORS
 	mc_interface_mc_timer_isr(is_second_motor);

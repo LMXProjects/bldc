@@ -2853,11 +2853,9 @@ void mcpwm_foc_adc_int_handler(void *p, uint32_t flags) {
 #endif
 
 	// Check the instantaneous ADC VBUS sample before running the FOC calculations.
-	if (mcpwm_foc_update_emergency_brake(is_second_motor, GET_INPUT_VOLTAGE())) {
-		m_isr_motor = 0;
-		m_last_adc_isr_duration = timer_seconds_elapsed_since(t_start);
-		return;
-	}
+	// Keep running the estimator while the emergency brake is active so speed
+	// telemetry continues to be updated.
+	mcpwm_foc_update_emergency_brake(is_second_motor, GET_INPUT_VOLTAGE());
 
 	mc_configuration *conf_now = motor_now->m_conf;
 	mc_configuration *conf_other = motor_other->m_conf;
@@ -4724,7 +4722,9 @@ static void control_current(motor_all_state_t *motor, float dt) {
 	// be able to fully utilize the bus voltage. See https://microchipdeveloper.com/mct5001:start
 	foc_svm(state_m->mod_alpha_raw, state_m->mod_beta_raw, top, &duty1, &duty2, &duty3, (uint32_t*)&state_m->svm_sector);
 
-	if (motor == &m_motor_1) {
+	if (mcpwm_foc_emergency_brake_active(motor != &m_motor_1)) {
+		full_brake_hw(motor);
+	} else if (motor == &m_motor_1) {
 		TIMER_UPDATE_DUTY_M1(duty1, duty2, duty3);
 #ifdef HW_HAS_DUAL_PARALLEL
 		TIMER_UPDATE_DUTY_M2(duty1, duty2, duty3);
@@ -4735,7 +4735,8 @@ static void control_current(motor_all_state_t *motor, float dt) {
 #endif
 	}
 
-	if (virtual_motor_is_connected() == false) {
+	if (!mcpwm_foc_emergency_brake_active(motor != &m_motor_1)
+			&& virtual_motor_is_connected() == false) {
 		// If all duty cycles are equal the phases should be shorted. Instead of
 		// modulating the short we keep all low-side FETs on - that will draw less
 		// power and not suffer from dead-time distortion. It also gives more

@@ -1830,15 +1830,41 @@ void mc_interface_set_fault_info(const char *str, int argn, float arg0, float ar
 }
 
 void mc_interface_fault_stop(mc_fault_code fault, bool is_second_motor, bool is_isr) {
-	m_fault_data.fault_code = fault;
-	m_fault_data.is_second_motor = is_second_motor;
+	volatile motor_if_state_t *motor;
+#ifdef HW_HAS_DUAL_MOTORS
+	motor = is_second_motor ? &m_motor_2 : &m_motor_1;
+#else
+	motor = &m_motor_1;
+#endif
 
 	if (is_isr) {
 		chSysLockFromISR();
+		if (fault != FAULT_CODE_EMERGENCY_OVERVOLTAGE &&
+				(motor->m_fault_now == FAULT_CODE_EMERGENCY_OVERVOLTAGE ||
+				(m_fault_data.fault_code == FAULT_CODE_EMERGENCY_OVERVOLTAGE &&
+				m_fault_data.is_second_motor == is_second_motor))) {
+			chSysUnlockFromISR();
+			return;
+		}
+
+		m_fault_data.fault_code = fault;
+		m_fault_data.is_second_motor = is_second_motor;
 		chEvtSignalI(fault_stop_tp, (eventmask_t) 1);
 		chSysUnlockFromISR();
 	} else {
-		chEvtSignal(fault_stop_tp, (eventmask_t) 1);
+		chSysLock();
+		if (fault != FAULT_CODE_EMERGENCY_OVERVOLTAGE &&
+				(motor->m_fault_now == FAULT_CODE_EMERGENCY_OVERVOLTAGE ||
+				(m_fault_data.fault_code == FAULT_CODE_EMERGENCY_OVERVOLTAGE &&
+				m_fault_data.is_second_motor == is_second_motor))) {
+			chSysUnlock();
+			return;
+		}
+
+		m_fault_data.fault_code = fault;
+		m_fault_data.is_second_motor = is_second_motor;
+		chEvtSignalI(fault_stop_tp, (eventmask_t) 1);
+		chSysUnlock();
 	}
 }
 
@@ -2540,7 +2566,8 @@ static void run_timer_tasks(volatile motor_if_state_t *motor) {
 		motor->m_ignore_iterations--;
 	} else {
 		if (!(is_motor_1 ? IS_DRV_FAULT() : IS_DRV_FAULT_2())
-				&& !mcpwm_foc_emergency_brake_active(!is_motor_1)) {
+				&& !mcpwm_foc_emergency_brake_active(!is_motor_1)
+				&& motor->m_fault_now != FAULT_CODE_EMERGENCY_OVERVOLTAGE) {
 			motor->m_fault_now = FAULT_CODE_NONE;
 		}
 	}
@@ -2915,6 +2942,11 @@ static THD_FUNCTION(fault_stop_thread, arg) {
 
 		mc_interface_select_motor_thread(fault_data_copy.is_second_motor ? 2 : 1);
 
+		if (motor->m_fault_now == FAULT_CODE_EMERGENCY_OVERVOLTAGE &&
+				fault_data_copy.fault_code != FAULT_CODE_EMERGENCY_OVERVOLTAGE) {
+			continue;
+		}
+
 		if (motor->m_fault_now == fault_data_copy.fault_code) {
 			motor->m_ignore_iterations = motor->m_conf.m_fault_stop_time_ms;
 			continue;
@@ -2970,6 +3002,11 @@ static THD_FUNCTION(fault_stop_thread, arg) {
 			fault_data_copy.info_str = 0;
 			fault_data_copy.info_argn = 0;
 			terminal_add_fault_data(&fdata);
+		}
+
+		if (motor->m_fault_now == FAULT_CODE_EMERGENCY_OVERVOLTAGE &&
+				fault_data_copy.fault_code != FAULT_CODE_EMERGENCY_OVERVOLTAGE) {
+			continue;
 		}
 
 		motor->m_ignore_iterations = motor->m_conf.m_fault_stop_time_ms;

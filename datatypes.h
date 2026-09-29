@@ -1246,7 +1246,8 @@ typedef struct {
 	float temp_fet;
 	float temp_motor;
 	float current_in;
-	float pid_pos_now;
+	uint8_t fault_code;
+	uint8_t alive_counter;
 } can_status_msg_4;
 
 typedef struct {

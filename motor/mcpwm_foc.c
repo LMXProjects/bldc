@@ -50,6 +50,10 @@ static volatile bool m_emergency_brake_m1 = false;
 static volatile bool m_emergency_brake_m2 = false;
 static volatile bool m_emergency_fault_sent_m1 = false;
 static volatile bool m_emergency_fault_sent_m2 = false;
+static volatile bool m_emergency_release_timer_active_m1 = false;
+static volatile bool m_emergency_release_timer_active_m2 = false;
+static volatile uint32_t m_emergency_release_start_m1 = 0;
+static volatile uint32_t m_emergency_release_start_m2 = 0;
 static volatile motor_all_state_t m_motor_1;
 #ifdef HW_HAS_DUAL_MOTORS
 static volatile motor_all_state_t m_motor_2;
@@ -363,6 +367,10 @@ void mcpwm_foc_init(mc_configuration *conf_m1, mc_configuration *conf_m2) {
 	m_emergency_brake_m2 = false;
 	m_emergency_fault_sent_m1 = false;
 	m_emergency_fault_sent_m2 = false;
+	m_emergency_release_timer_active_m1 = false;
+	m_emergency_release_timer_active_m2 = false;
+	m_emergency_release_start_m1 = 0;
+	m_emergency_release_start_m2 = 0;
 
 	memset((void*)&m_motor_1, 0, sizeof(motor_all_state_t));
 	m_isr_motor = 0;
@@ -3687,10 +3695,30 @@ void mcpwm_foc_adc_int_handler(void *p, uint32_t flags) {
 bool mcpwm_foc_update_emergency_brake(bool is_second_motor, float vdc) {
 	volatile bool *emergency_brake = is_second_motor ? &m_emergency_brake_m2 : &m_emergency_brake_m1;
 	volatile bool *fault_sent = is_second_motor ? &m_emergency_fault_sent_m2 : &m_emergency_fault_sent_m1;
+	volatile bool *release_timer_active = is_second_motor ?
+			&m_emergency_release_timer_active_m2 : &m_emergency_release_timer_active_m1;
+	volatile uint32_t *release_start = is_second_motor ?
+			&m_emergency_release_start_m2 : &m_emergency_release_start_m1;
 	motor_all_state_t *motor = (motor_all_state_t*)M_MOTOR(is_second_motor);
 
+	// Re-arm full brake if the bus rises back to the OV threshold after release.
 	if (vdc >= MCPWM_FOC_EMERGENCY_OVERVOLTAGE) {
 		*emergency_brake = true;
+		*release_timer_active = false;
+	} else if (*emergency_brake) {
+		if ((vdc > MCPWM_FOC_EMERGENCY_MIN_OVERVOLTAGE_RELEASE) && 
+					(vdc < MCPWM_FOC_EMERGENCY_MAX_OVERVOLTAGE_RELEASE)) {
+			if (!*release_timer_active) {
+				*release_start = timer_time_now();
+				*release_timer_active = true;
+			} else if (timer_seconds_elapsed_since(*release_start) >=
+					(MCPWM_FOC_EMERGENCY_RELEASE_DEBOUNCE_MS * 0.001f)) {
+				*emergency_brake = false;
+				*release_timer_active = false;
+			}
+		} else {
+			*release_timer_active = false;
+		}
 	}
 
 	if (*emergency_brake) {
@@ -3700,6 +3728,8 @@ bool mcpwm_foc_update_emergency_brake(bool is_second_motor, float vdc) {
 			*fault_sent = true;
 			mc_interface_fault_stop(FAULT_CODE_EMERGENCY_OVERVOLTAGE, is_second_motor, true);
 		}
+	} else if (*fault_sent) {
+		stop_pwm_hw(motor);
 	}
 
 	return *emergency_brake;
@@ -4724,8 +4754,18 @@ static void control_current(motor_all_state_t *motor, float dt) {
 	// be able to fully utilize the bus voltage. See https://microchipdeveloper.com/mct5001:start
 	foc_svm(state_m->mod_alpha_raw, state_m->mod_beta_raw, top, &duty1, &duty2, &duty3, (uint32_t*)&state_m->svm_sector);
 
-	if (mcpwm_foc_emergency_brake_active(motor != &m_motor_1)) {
+	bool is_second_motor = false;
+#ifdef HW_HAS_DUAL_MOTORS
+	is_second_motor = motor == &m_motor_2;
+#endif
+	bool emergency_brake_active = mcpwm_foc_emergency_brake_active(is_second_motor);
+	bool emergency_fault_latched = is_second_motor ?
+			m_emergency_fault_sent_m2 : m_emergency_fault_sent_m1;
+
+	if (emergency_brake_active) {
 		full_brake_hw(motor);
+	} else if (emergency_fault_latched) {
+		stop_pwm_hw(motor);
 	} else if (motor == &m_motor_1) {
 		TIMER_UPDATE_DUTY_M1(duty1, duty2, duty3);
 #ifdef HW_HAS_DUAL_PARALLEL
@@ -4737,8 +4777,7 @@ static void control_current(motor_all_state_t *motor, float dt) {
 #endif
 	}
 
-	if (!mcpwm_foc_emergency_brake_active(motor != &m_motor_1)
-			&& virtual_motor_is_connected() == false) {
+	if (!emergency_fault_latched && virtual_motor_is_connected() == false) {
 		// If all duty cycles are equal the phases should be shorted. Instead of
 		// modulating the short we keep all low-side FETs on - that will draw less
 		// power and not suffer from dead-time distortion. It also gives more

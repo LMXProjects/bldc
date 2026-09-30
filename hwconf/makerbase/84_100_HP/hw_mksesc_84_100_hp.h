@@ -21,7 +21,7 @@
 
 #define HW_MKSESC_84_100_HP_H_
 
-#define HW_NAME "MIC_F004"
+#define HW_NAME "MIC_D004"
 
 // HW properties
 #define HW_HAS_3_SHUNTS

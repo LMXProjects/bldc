@@ -1192,6 +1192,7 @@ void comm_can_send_status3(uint8_t id, bool replace) {
 }
 
 void comm_can_send_status4(uint8_t id, bool replace) {
+	// Status 4 keeps its eight-byte payload; the last byte pair is fault + alive counter.
 	static uint8_t alive_counter = 0;
 	int32_t send_index = 0;
 	uint8_t buffer[8];
@@ -2017,6 +2018,7 @@ static void decode_msg(uint32_t eid, uint8_t *data8, int len, bool is_replaced) 
 				stat_tmp_4->temp_fet = (float)buffer_get_int16(data8, &ind) / 10.0;
 				stat_tmp_4->temp_motor = (float)buffer_get_int16(data8, &ind) / 10.0;
 				stat_tmp_4->current_in = (float)buffer_get_int16(data8, &ind) / 10.0;
+				// Match the sender's one-byte fault code and wrapping alive counter.
 				stat_tmp_4->fault_code = data8[ind++];
 				stat_tmp_4->alive_counter = data8[ind++];
 				break;

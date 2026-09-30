@@ -1837,6 +1837,7 @@ void mc_interface_fault_stop(mc_fault_code fault, bool is_second_motor, bool is_
 	motor = &m_motor_1;
 #endif
 
+	// Give an emergency overvoltage fault priority over later faults for that motor.
 	if (is_isr) {
 		chSysLockFromISR();
 		if (fault != FAULT_CODE_EMERGENCY_OVERVOLTAGE &&
@@ -2565,6 +2566,7 @@ static void run_timer_tasks(volatile motor_if_state_t *motor) {
 	if (motor->m_ignore_iterations > 0) {
 		motor->m_ignore_iterations--;
 	} else {
+		// Emergency overvoltage remains latched until FOC is explicitly reinitialized.
 		if (!(is_motor_1 ? IS_DRV_FAULT() : IS_DRV_FAULT_2())
 				&& !mcpwm_foc_emergency_brake_active(!is_motor_1)
 				&& motor->m_fault_now != FAULT_CODE_EMERGENCY_OVERVOLTAGE) {
@@ -2942,6 +2944,7 @@ static THD_FUNCTION(fault_stop_thread, arg) {
 
 		mc_interface_select_motor_thread(fault_data_copy.is_second_motor ? 2 : 1);
 
+		// Do not let a queued lower-priority fault overwrite the emergency fault.
 		if (motor->m_fault_now == FAULT_CODE_EMERGENCY_OVERVOLTAGE &&
 				fault_data_copy.fault_code != FAULT_CODE_EMERGENCY_OVERVOLTAGE) {
 			continue;
@@ -3004,6 +3007,7 @@ static THD_FUNCTION(fault_stop_thread, arg) {
 			terminal_add_fault_data(&fdata);
 		}
 
+		// Recheck after logging, since the emergency fault may arrive while logging.
 		if (motor->m_fault_now == FAULT_CODE_EMERGENCY_OVERVOLTAGE &&
 				fault_data_copy.fault_code != FAULT_CODE_EMERGENCY_OVERVOLTAGE) {
 			continue;

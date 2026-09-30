@@ -46,10 +46,12 @@
 static volatile bool m_dccal_done = false;
 static volatile float m_last_adc_isr_duration;
 static volatile bool m_init_done = false;
+// Keep emergency brake and fault state independently for each motor.
 static volatile bool m_emergency_brake_m1 = false;
 static volatile bool m_emergency_brake_m2 = false;
 static volatile bool m_emergency_fault_sent_m1 = false;
 static volatile bool m_emergency_fault_sent_m2 = false;
+// Track how long bus voltage stays in the configured release window.
 static volatile bool m_emergency_release_timer_active_m1 = false;
 static volatile bool m_emergency_release_timer_active_m2 = false;
 static volatile uint32_t m_emergency_release_start_m1 = 0;
@@ -363,6 +365,7 @@ void mcpwm_foc_init(mc_configuration *conf_m1, mc_configuration *conf_m2) {
 #endif
 
 	m_init_done = false;
+	// A full FOC initialization is the explicit reset for the emergency latch.
 	m_emergency_brake_m1 = false;
 	m_emergency_brake_m2 = false;
 	m_emergency_fault_sent_m1 = false;
@@ -2856,7 +2859,7 @@ void mcpwm_foc_adc_int_handler(void *p, uint32_t flags) {
 	mc_configuration *conf_now = motor_now->m_conf;
 	mc_configuration *conf_other = motor_other->m_conf;
 
-	// Check VBUS before any V0/V7 or loop-divider return.
+	// Check the raw ADC bus voltage before V0/V7 or loop-divider early returns.
 	const float vdc = GET_INPUT_VOLTAGE();
 	mcpwm_foc_update_emergency_brake(is_second_motor, vdc);
 
@@ -3701,7 +3704,8 @@ bool mcpwm_foc_update_emergency_brake(bool is_second_motor, float vdc) {
 			&m_emergency_release_start_m2 : &m_emergency_release_start_m1;
 	motor_all_state_t *motor = (motor_all_state_t*)M_MOTOR(is_second_motor);
 
-	// Re-arm full brake if the bus rises back to the OV threshold after release.
+	// Apply immediately at the OV threshold; only release after voltage stays in
+	// the configured window for the full debounce interval.
 	if (vdc >= MCPWM_FOC_EMERGENCY_OVERVOLTAGE) {
 		*emergency_brake = true;
 		*release_timer_active = false;
@@ -3724,11 +3728,13 @@ bool mcpwm_foc_update_emergency_brake(bool is_second_motor, float vdc) {
 	if (*emergency_brake) {
 		full_brake_hw(motor);
 
+		// Report the emergency fault once; keep it latched after brake release.
 		if (!*fault_sent) {
 			*fault_sent = true;
 			mc_interface_fault_stop(FAULT_CODE_EMERGENCY_OVERVOLTAGE, is_second_motor, true);
 		}
 	} else if (*fault_sent) {
+		// Release the phase short to freewheel, while the fault latch blocks torque.
 		stop_pwm_hw(motor);
 	}
 
@@ -3736,11 +3742,11 @@ bool mcpwm_foc_update_emergency_brake(bool is_second_motor, float vdc) {
 }
 
 bool mcpwm_foc_emergency_brake_active(bool is_second_motor) {
+	// Used by the interface layer to preserve the emergency fault state.
 	return is_second_motor ? m_emergency_brake_m2 : m_emergency_brake_m1;
 }
 
 // Private functions
-
 static void timer_update(motor_all_state_t *motor, float dt) {
 	foc_run_fw(motor, dt);
 
@@ -4758,6 +4764,7 @@ static void control_current(motor_all_state_t *motor, float dt) {
 #ifdef HW_HAS_DUAL_MOTORS
 	is_second_motor = motor == &m_motor_2;
 #endif
+	// Override normal FOC PWM writes while the emergency state is latched.
 	bool emergency_brake_active = mcpwm_foc_emergency_brake_active(is_second_motor);
 	bool emergency_fault_latched = is_second_motor ?
 			m_emergency_fault_sent_m2 : m_emergency_fault_sent_m1;

@@ -151,6 +151,9 @@ bool mcpwm_foc_emergency_brake_active(bool is_second_motor);
 
 // Defines
 #define MCPWM_FOC_CURRENT_SAMP_OFFSET				(2) // Offset from timer top for ADC samples
+
+// Emergency brake is immediate above the OV threshold and releases only after
+// the bus remains within the configured voltage window for the debounce time.
 #ifndef MCPWM_FOC_EMERGENCY_OVERVOLTAGE
 #define MCPWM_FOC_EMERGENCY_OVERVOLTAGE			(60.0)
 #endif

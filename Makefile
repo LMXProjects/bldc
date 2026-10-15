@@ -171,7 +171,7 @@ ifdef USER_GIT_BRANCH_NAME
   $(1)_BUILD_MACROS += -DUSER_GIT_BRANCH_NAME=\"$(USER_GIT_BRANCH_NAME)\"
 endif
 
-fw_$(1)_vescfw: $$($(1)_HW_DIR)
+fw_$(1)_vescfw: $$($(1)_HW_HEADER)
 fw_$(1)_vescfw: $$($(1)_HW_SRC_FILE)
 fw_$(1)_vescfw:
 	@echo "********* BUILD: $(1) **********"

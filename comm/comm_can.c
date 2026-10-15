@@ -1216,9 +1216,12 @@ CANRxFrame *comm_can_get_rx_frame(int interface) {
 void comm_can_send_status1(uint8_t id, bool replace) {
 	int32_t send_index = 0;
 	uint8_t buffer[8];
-	buffer_append_int32(buffer, (int32_t)mc_interface_get_rpm(), &send_index);
+	buffer_append_int16(buffer, (int16_t)(mc_interface_get_rpm() / 10), &send_index);
 	buffer_append_int16(buffer, (int16_t)(mc_interface_get_tot_current_filtered() * 1e1), &send_index);
 	buffer_append_int16(buffer, (int16_t)(mc_interface_get_duty_cycle_now() * 1e3), &send_index);
+	buffer_append_int16(buffer, (int16_t)(mc_interface_get_input_voltage_filtered() * 1e1), &send_index);
+	//buffer_append_int16(buffer, (int16_t)(GET_INPUT_VOLTAGE() * 1e1), &send_index);
+	
 	comm_can_transmit_eid_replace(id | ((uint32_t)CAN_PACKET_STATUS << 8),
 			buffer, send_index, replace, 0);
 }
@@ -1226,8 +1229,10 @@ void comm_can_send_status1(uint8_t id, bool replace) {
 void comm_can_send_status2(uint8_t id, bool replace) {
 	int32_t send_index = 0;
 	uint8_t buffer[8];
-	buffer_append_int32(buffer, (int32_t)(mc_interface_get_amp_hours(false) * 1e4), &send_index);
-	buffer_append_int32(buffer, (int32_t)(mc_interface_get_amp_hours_charged(false) * 1e4), &send_index);
+	//buffer_append_int32(buffer, (int32_t)(mc_interface_get_amp_hours(false) * 1e4), &send_index);
+    buffer_append_int32(buffer, (int32_t)(mc_interface_read_reset_avg_id() * 1e3), &send_index);
+	//buffer_append_int32(buffer, (int32_t)(mc_interface_get_amp_hours_charged(false) * 1e4), &send_index);
+	buffer_append_int32(buffer, (int32_t)(mc_interface_read_reset_avg_iq() * 1e3), &send_index);
 	comm_can_transmit_eid_replace(id | ((uint32_t)CAN_PACKET_STATUS_2 << 8),
 			buffer, send_index, replace, 0);
 }
@@ -1242,12 +1247,15 @@ void comm_can_send_status3(uint8_t id, bool replace) {
 }
 
 void comm_can_send_status4(uint8_t id, bool replace) {
+	// Status 4 keeps its eight-byte payload; the last byte pair is fault + alive counter.
+	static uint8_t alive_counter = 0;
 	int32_t send_index = 0;
 	uint8_t buffer[8];
 	buffer_append_int16(buffer, (int16_t)(mc_interface_temp_fet_filtered() * 1e1), &send_index);
 	buffer_append_int16(buffer, (int16_t)(mc_interface_temp_motor_filtered() * 1e1), &send_index);
 	buffer_append_int16(buffer, (int16_t)(mc_interface_get_tot_current_in_filtered() * 1e1), &send_index);
-	buffer_append_int16(buffer, (int16_t)(mc_interface_get_pid_pos_now() * 50.0), &send_index);
+	buffer[send_index++] = (uint8_t)mc_interface_get_fault();
+	buffer[send_index++] = alive_counter++;
 	comm_can_transmit_eid_replace(id | ((uint32_t)CAN_PACKET_STATUS_4 << 8),
 			buffer, send_index, replace, 0);
 }
@@ -1256,7 +1264,7 @@ void comm_can_send_status5(uint8_t id, bool replace) {
 	int32_t send_index = 0;
 	uint8_t buffer[8];
 	buffer_append_int32(buffer, mc_interface_get_tachometer_value(false), &send_index);
-	buffer_append_int16(buffer, (int16_t)(mc_interface_get_input_voltage_filtered() * 1e1), &send_index);
+	buffer_append_int16(buffer, (int16_t)(GET_INPUT_VOLTAGE() * 1e1), &send_index);
 	buffer_append_int16(buffer, 0, &send_index); // Reserved for now
 	comm_can_transmit_eid_replace(id | ((uint32_t)CAN_PACKET_STATUS_5 << 8),
 			buffer, send_index, replace, 0);
@@ -1265,10 +1273,10 @@ void comm_can_send_status5(uint8_t id, bool replace) {
 void comm_can_send_status6(uint8_t id, bool replace) {
 	int32_t send_index = 0;
 	uint8_t buffer[8];
-	buffer_append_float16(buffer, ADC_VOLTS(ADC_IND_EXT), 1e3, &send_index);
-	buffer_append_float16(buffer, ADC_VOLTS(ADC_IND_EXT2), 1e3, &send_index);
-	buffer_append_float16(buffer, ADC_VOLTS(ADC_IND_EXT3), 1e3, &send_index);
-	buffer_append_float16(buffer, servodec_get_servo(0), 1e3, &send_index);
+	buffer_append_int16(buffer, ADC_VOLTS(ADC_IND_EXT) * 1e3, &send_index);
+	buffer_append_int16(buffer, ADC_VOLTS(ADC_IND_EXT2) * 1e3, &send_index);
+	buffer_append_int16(buffer, ADC_VOLTS(ADC_IND_EXT3) * 1e3, &send_index);
+	buffer_append_int16(buffer, servodec_get_servo(0) * 1e3, &send_index);
 	comm_can_transmit_eid_replace(id | ((uint32_t)CAN_PACKET_STATUS_6 << 8),
 			buffer, send_index, replace, 0);
 }
